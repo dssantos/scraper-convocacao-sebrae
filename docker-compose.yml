@@ -1,0 +1,30 @@
+services:
+  sebrae-scraper:
+    build: .
+    container_name: sebrae_scraper
+    restart: "no"
+
+    # Environment variables from .env file
+    env_file:
+      - .env
+
+    # Mount volumes for persistence
+    volumes:
+      - ./checked_urls.json:/app/checked_urls.json:rw  # rw ensures read-write mount
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
