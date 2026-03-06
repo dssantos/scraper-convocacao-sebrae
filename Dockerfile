@@ -6,9 +6,6 @@ RUN apt-get update && apt-get install -y \
     libxslt1.1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN useradd -m -u 1000 scraperuser
-
 # Set working directory
 WORKDIR /app
 
@@ -19,11 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY sebrae_scraper.py .
 
-# Create data directory for persistent storage
-RUN mkdir -p /app/data && chown -R scraperuser:scraperuser /app
-
-# Switch to non-root user
-USER scraperuser
+# Create data directory and empty checked_urls.json file
+RUN mkdir -p /app/data && echo '{}' > /app/data/checked_urls.json
 
 # Default command
 CMD ["python", "sebrae_scraper.py"]

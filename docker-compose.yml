@@ -10,7 +10,11 @@ services:
 
     # Mount volumes for persistence
     volumes:
-      - ./checked_urls.json:/app/checked_urls.json:rw  # rw ensures read-write mount
+      - scraper_data:/app/data
+
+    # Environment variable to override data location
+    environment:
+      - CHECKED_URLS_FILE=/app/data/checked_urls.json
 
     # Resource limits
     deploy:
@@ -28,3 +32,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+volumes:
+  scraper_data:

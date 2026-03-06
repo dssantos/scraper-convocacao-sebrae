@@ -7,9 +7,9 @@ from requests.exceptions import MissingSchema, ConnectionError
 import smtplib
 from email.message import EmailMessage
 from decouple import config
+import os
 
-
-CHECKED_URLS_FILE = "checked_urls.json"
+CHECKED_URLS_FILE = os.environ.get("CHECKED_URLS_FILE", "checked_urls.json")
 
 def load_checked_data():
     """Carrega as URLs e nomes já verificados de um arquivo JSON."""

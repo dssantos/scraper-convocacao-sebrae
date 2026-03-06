@@ -51,6 +51,7 @@ Thumbs.db
 download.pdf
 *.pdf
 checked_urls.json
+data/
 
 # Docker
 .dockerignore
