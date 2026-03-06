@@ -7,9 +7,39 @@ from requests.exceptions import MissingSchema, ConnectionError
 import smtplib
 from email.message import EmailMessage
 from decouple import config
-import os
+import logging
+import sys
+from datetime import datetime
 
 CHECKED_URLS_FILE = os.environ.get("CHECKED_URLS_FILE", "checked_urls.json")
+
+def setup_logging():
+    """Configura o sistema de logging."""
+    log_level = os.environ.get('LOG_LEVEL', 'INFO')
+    log_dir = os.path.dirname(CHECKED_URLS_FILE)
+    log_file = os.path.join(log_dir, 'scraper.log') if log_dir else 'scraper.log'
+
+    handlers = [
+        logging.StreamHandler(sys.stdout)
+    ]
+
+    # Só adiciona handler de arquivo se estiver em ambiente com filesystem
+    try:
+        handlers.append(logging.FileHandler(log_file))
+    except (IOError, OSError):
+        pass  # Sem filesystem disponível (ex: durante build do Docker)
+
+    logging.basicConfig(
+        level=getattr(logging, log_level),
+        format='%(asctime)s | %(levelname)-8s | %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        handlers=handlers,
+        force=True  # Reconfigura mesmo que já tenha sido configurado antes
+    )
+
+    return logging.getLogger(__name__)
+
+logger = setup_logging()
 
 def load_checked_data():
     """Carrega as URLs e nomes já verificados de um arquivo JSON."""
@@ -65,7 +95,7 @@ def download_file(file_link):
             content = requests.get(file_link, stream=True).content
         except MissingSchema:
             file_link = 'https://sebrae.com.br' + file_link[2:]
-            print(f'Retentando: {file_link}')
+            logger.warning(f'Missing schema, retrying with https: {file_link}')
             content = requests.get(file_link, stream=True).content
         file.write(content)
 
@@ -89,13 +119,21 @@ def send_mail(text):
     msg['From'] = YOUR_GOOGLE_EMAIL
     msg['To'] = YOUR_GOOGLE_EMAIL
 
-    print('Enviando email...')
+    logger.info('Sending email notification...')
     smtpserver.send_message(msg)
+    logger.info('Email sent successfully')
     smtpserver.close()
 
 # Nome a ser pesquisado
 name = 'sebrae'
 url = 'https://sebrae.com.br/sites/PortalSebrae/ufs/ba/sebraeaz/comunicado%200012024-processo-seletivo-analista%20tecnico,44d9fe7ce5db0910VgnVCM1000001b00320aRCRD?vgnextrefresh=1'
+
+# Log início
+start_time = datetime.now()
+logger.info('='*60)
+logger.info('SEBRAE Scraper started')
+logger.info(f'Searching for name: {name}')
+logger.info(f'Target URL: {url}')
 
 message = ''
 
@@ -103,18 +141,40 @@ for publication_link in get_publications_links(url):
     if is_checked(name, publication_link):
         continue
 
-    print(f'Checando: {publication_link}')
+    logger.info(f'Checking URL: {publication_link}')
     try:
         file_link = get_file_link(publication_link)
         download_file(file_link)
     except ConnectionError:
-        print('Erro de conexão')
+        logger.error('Connection error')
         continue
     text = extract_text_from_pdf()
 
     if name.lower() in text.lower():
         message += f'<p><b>{name}</b> encontrado em <a href="{file_link}">{file_link}</a></p>'
-        print(f'{name} encontrado em {file_link}')
-    save_checked_data(name, publication_link) 
+        logger.info(f'Name "{name}" found in {file_link}')
+    save_checked_data(name, publication_link)
+
+# Log final com métricas
+duration = datetime.now() - start_time
+try:
+    all_links = get_publications_links(url)
+    total_urls = len(all_links)
+    checked_count = len([u for u in all_links if is_checked(name, u)])
+    found_count = message.count('<p><b>')
+except Exception:
+    total_urls = 0
+    checked_count = 0
+    found_count = 0
+
+logger.info('='*60)
+logger.info('SEBRAE Scraper finished')
+logger.info(f'Total URLs found: {total_urls}')
+logger.info(f'URLs checked: {checked_count}')
+logger.info(f'Name found: {found_count} times')
+logger.info(f'Email sent: {"Yes" if message else "No"}')
+logger.info(f'Duration: {duration}')
+logger.info('='*60)
+
 if message:
     send_mail(f'<html>{message}</html>')

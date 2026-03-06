@@ -15,6 +15,7 @@ services:
     # Environment variable to override data location
     environment:
       - CHECKED_URLS_FILE=/app/data/checked_urls.json
+      - LOG_LEVEL=INFO
 
     # Resource limits
     deploy:
