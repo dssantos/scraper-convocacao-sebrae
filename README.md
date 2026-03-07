@@ -112,17 +112,67 @@ crontab -e
 docker-compose run --rm sebrae-scraper
 ```
 
+## Testes
+
+O projeto inclui uma suíte de testes completa usando pytest.
+
+### Executar Testes Localmente
+
+1. Instale as dependências de desenvolvimento:
+```bash
+pip install -r requirements.txt
+```
+
+2. Execute todos os testes:
+```bash
+pytest tests/ -v
+```
+
+3. Execute testes com coverage:
+```bash
+pytest tests/ -v --cov=sebrae_scraper --cov-report=term-missing
+```
+
+4. Execute relatório HTML de coverage:
+```bash
+pytest tests/ --cov=sebrae_scraper --cov-report=html
+# Abra htmlcov/index.html no navegador
+```
+
+### Executar Testes no Docker
+
+```bash
+# Build a imagem
+docker compose build
+
+# Execute os testes no container
+docker compose run --rm sebrae-scraper pytest tests/ -v
+```
+
+### Estrutura dos Testes
+
+- `test_utils.py`: Testes unitários para funções de utilidade (load_checked_data, save_checked_data, is_checked)
+- `test_scraper.py`: Testes unitários para funções de scraping com mocks
+- `test_integration.py`: Testes de integração para o fluxo completo
+
 ## Estrutura do Projeto
 
 ```
 scraper-convocacao-sebrae/
 ├── sebrae_scraper.py       # Script principal do scraper
 ├── requirements.txt         # Dependências Python
+├── pytest.ini              # Configuração do pytest
 ├── Dockerfile              # Configuração da imagem Docker
 ├── docker-compose.yml      # Orquestração Docker
 ├── .env.example            # Template de variáveis de ambiente
 ├── .gitignore              # Regras de ignorar do Git
 ├── .dockerignore           # Regras de ignorar do Docker
+├── tests/                  # Suíte de testes
+│   ├── __init__.py
+│   ├── conftest.py         # Fixtures e configuração
+│   ├── test_utils.py       # Testes de utilitários
+│   ├── test_scraper.py     # Testes do scraper
+│   └── test_integration.py # Testes de integração
 ├── checked_urls.json       # Estado persistente (gerado automaticamente)
 └── README.md               # Este arquivo
 ```

@@ -60,3 +60,10 @@ data/
 *.tmp
 temp/
 tmp/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.cover

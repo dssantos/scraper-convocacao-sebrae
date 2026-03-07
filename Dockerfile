@@ -15,6 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY sebrae_scraper.py .
+COPY tests/ ./tests/
+COPY pytest.ini .
 
 # Create data directory and empty checked_urls.json file
 RUN mkdir -p /app/data && echo '{}' > /app/data/checked_urls.json

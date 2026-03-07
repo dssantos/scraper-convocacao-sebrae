@@ -124,57 +124,58 @@ def send_mail(text):
     logger.info('Email sent successfully')
     smtpserver.close()
 
-# Nome a ser pesquisado
-name = 'sebrae'
-url = 'https://sebrae.com.br/sites/PortalSebrae/ufs/ba/sebraeaz/comunicado%200012024-processo-seletivo-analista%20tecnico,44d9fe7ce5db0910VgnVCM1000001b00320aRCRD?vgnextrefresh=1'
+if __name__ == "__main__":
+    # Nome a ser pesquisado
+    name = 'sebrae'
+    url = 'https://sebrae.com.br/sites/PortalSebrae/ufs/ba/sebraeaz/comunicado%200012024-processo-seletivo-analista%20tecnico,44d9fe7ce5db0910VgnVCM1000001b00320aRCRD?vgnextrefresh=1'
 
-# Log início
-start_time = datetime.now()
-logger.info('='*60)
-logger.info('SEBRAE Scraper started')
-logger.info(f'Searching for name: {name}')
-logger.info(f'Target URL: {url}')
+    # Log início
+    start_time = datetime.now()
+    logger.info('='*60)
+    logger.info('SEBRAE Scraper started')
+    logger.info(f'Searching for name: {name}')
+    logger.info(f'Target URL: {url}')
 
-message = ''
+    message = ''
 
-for publication_link in get_publications_links(url):
-    if is_checked(name, publication_link):
-        continue
+    for publication_link in get_publications_links(url):
+        if is_checked(name, publication_link):
+            continue
 
-    logger.info(f'Checking URL: {publication_link}')
+        logger.info(f'Checking URL: {publication_link}')
+        try:
+            file_link = get_file_link(publication_link)
+            download_file(file_link)
+        except ConnectionError:
+            logger.error('Connection error')
+            continue
+        text = extract_text_from_pdf()
+
+        if name.lower() in text.lower():
+            message += f'<p><b>{name}</b> encontrado em <a href="{file_link}">{file_link}</a></p>'
+            logger.info(f'Name "{name}" found in {file_link}')
+        save_checked_data(name, publication_link)
+
+    # Log final com métricas
+    duration = datetime.now() - start_time
     try:
-        file_link = get_file_link(publication_link)
-        download_file(file_link)
-    except ConnectionError:
-        logger.error('Connection error')
-        continue
-    text = extract_text_from_pdf()
+        all_links = get_publications_links(url)
+        total_urls = len(all_links)
+        checked_count = len([u for u in all_links if is_checked(name, u)])
+        found_count = message.count('<p><b>')
+    except Exception:
+        total_urls = 0
+        checked_count = 0
+        found_count = 0
 
-    if name.lower() in text.lower():
-        message += f'<p><b>{name}</b> encontrado em <a href="{file_link}">{file_link}</a></p>'
-        logger.info(f'Name "{name}" found in {file_link}')
-    save_checked_data(name, publication_link)
+    logger.info('='*60)
+    logger.info('SEBRAE Scraper finished')
+    logger.info(f'Total URLs found: {total_urls}')
+    logger.info(f'URLs checked: {checked_count}')
+    logger.info(f'Name found: {found_count} times')
+    logger.info(f'Email sent: {"Yes" if message else "No"}')
+    logger.info(f'Duration: {duration}')
+    logger.info('='*60)
 
-# Log final com métricas
-duration = datetime.now() - start_time
-try:
-    all_links = get_publications_links(url)
-    total_urls = len(all_links)
-    checked_count = len([u for u in all_links if is_checked(name, u)])
-    found_count = message.count('<p><b>')
-except Exception:
-    total_urls = 0
-    checked_count = 0
-    found_count = 0
-
-logger.info('='*60)
-logger.info('SEBRAE Scraper finished')
-logger.info(f'Total URLs found: {total_urls}')
-logger.info(f'URLs checked: {checked_count}')
-logger.info(f'Name found: {found_count} times')
-logger.info(f'Email sent: {"Yes" if message else "No"}')
-logger.info(f'Duration: {duration}')
-logger.info('='*60)
-
-if message:
-    send_mail(f'<html>{message}</html>')
+    if message:
+        send_mail(f'<html>{message}</html>')

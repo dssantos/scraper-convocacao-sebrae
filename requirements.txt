@@ -2,3 +2,6 @@ requests==2.32.3
 lxml==5.3
 pypdf==5.1
 python-decouple==3.8
+pytest==8.3.4
+pytest-mock==3.14.0
+pytest-cov==6.0
