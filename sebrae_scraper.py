@@ -138,43 +138,85 @@ if __name__ == "__main__":
 
     message = ''
 
-    for publication_link in get_publications_links(url):
-        if is_checked(name, publication_link):
-            continue
+    # Obter todos os links primeiro para análise
+    all_links = get_publications_links(url)
+    new_links = [link for link in all_links if not is_checked(name, link)]
+    already_checked = [link for link in all_links if is_checked(name, link)]
 
-        logger.info(f'Checking URL: {publication_link}')
+    # Log de status inicial
+    logger.info('-'*60)
+    logger.info(f'Total publications found: {len(all_links)}')
+    logger.info(f'Already checked: {len(already_checked)}')
+    logger.info(f'New to check: {len(new_links)}')
+
+    if len(new_links) == 0:
+        logger.info('All publications already checked. Nothing to do.')
+    else:
+        logger.info(f'Starting to check {len(new_links)} new publications...')
+
+    # Processar apenas links novos
+    for i, publication_link in enumerate(new_links, 1):
+        logger.info('-'*60)
+        logger.info(f'[{i}/{len(new_links)}] Processing publication: {publication_link[:80]}...')
+
         try:
+            # Passo 1: Obter link do arquivo PDF
+            logger.debug('  [1/5] Extracting PDF link from publication page...')
             file_link = get_file_link(publication_link)
-            download_file(file_link)
-        except ConnectionError:
-            logger.error('Connection error')
-            continue
-        text = extract_text_from_pdf()
+            logger.debug(f'  [1/5] PDF link found: {file_link[:80]}...')
 
-        if name.lower() in text.lower():
-            message += f'<p><b>{name}</b> encontrado em <a href="{file_link}">{file_link}</a></p>'
-            logger.info(f'Name "{name}" found in {file_link}')
-        save_checked_data(name, publication_link)
+            # Passo 2: Baixar arquivo PDF
+            logger.debug('  [2/5] Downloading PDF file...')
+            download_file(file_link)
+
+            # Obter tamanho do arquivo baixado
+            import os
+            file_size = os.path.getsize('download.pdf')
+            logger.debug(f'  [2/5] Downloaded {file_size:,} bytes')
+
+            # Passo 3: Extrair texto do PDF
+            logger.debug('  [3/5] Extracting text from PDF...')
+            text = extract_text_from_pdf()
+            text_length = len(text.strip())
+            logger.debug(f'  [3/5] Extracted {text_length:,} characters')
+
+            # Passo 4: Buscar nome no conteúdo
+            logger.debug(f'  [4/5] Searching for name "{name}" in content...')
+            if name.lower() in text.lower():
+                logger.info(f'  [4/5] ✓ Name FOUND in document!')
+                message += f'<p><b>{name}</b> encontrado em <a href="{file_link}">{file_link}</a></p>'
+                logger.info(f'  [5/5] Added to email notification')
+            else:
+                logger.debug(f'  [4/5] Name not found in this document')
+                logger.debug(f'  [5/5] Document processed (name not present)')
+
+            # Passo 5: Salvar como verificado
+            save_checked_data(name, publication_link)
+            logger.debug(f'  [5/5] Marked as checked')
+
+        except ConnectionError as e:
+            logger.error(f'  ✗ Connection error: {e}')
+            logger.info(f'  Skipping to next publication...')
+            continue
+        except Exception as e:
+            logger.error(f'  ✗ Unexpected error: {e}')
+            logger.info(f'  Skipping to next publication...')
+            continue
 
     # Log final com métricas
     duration = datetime.now() - start_time
-    try:
-        all_links = get_publications_links(url)
-        total_urls = len(all_links)
-        checked_count = len([u for u in all_links if is_checked(name, u)])
-        found_count = message.count('<p><b>')
-    except Exception:
-        total_urls = 0
-        checked_count = 0
-        found_count = 0
+    found_count = message.count('<p><b>')
 
     logger.info('='*60)
     logger.info('SEBRAE Scraper finished')
-    logger.info(f'Total URLs found: {total_urls}')
-    logger.info(f'URLs checked: {checked_count}')
-    logger.info(f'Name found: {found_count} times')
-    logger.info(f'Email sent: {"Yes" if message else "No"}')
     logger.info(f'Duration: {duration}')
+    logger.info('-'*60)
+    logger.info(f'Summary:')
+    logger.info(f'  Total publications: {len(all_links)}')
+    logger.info(f'  Already checked: {len(already_checked)}')
+    logger.info(f'  New processed: {len(new_links)}')
+    logger.info(f'  Name found: {found_count} times')
+    logger.info(f'  Email sent: {"Yes" if message else "No"}')
     logger.info('='*60)
 
     if message:
