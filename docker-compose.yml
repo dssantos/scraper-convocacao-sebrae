@@ -10,7 +10,7 @@ services:
 
     # Mount volumes for persistence
     volumes:
-      - scraper_data:/app/data
+      - ./data:/app/data
 
     # Environment variable to override data location
     environment:
@@ -33,6 +33,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-volumes:
-  scraper_data:

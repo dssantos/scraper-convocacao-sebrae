@@ -51,7 +51,9 @@ Thumbs.db
 download.pdf
 *.pdf
 checked_urls.json
-data/
+# data/ directory is now used for bind mount (keep directory, ignore content)
+data/*.json
+data/*.log
 
 # Docker
 .dockerignore
