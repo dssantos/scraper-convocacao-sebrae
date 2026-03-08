@@ -61,13 +61,13 @@ cp .env.example .env
 
 3. Build e execução com Docker Compose:
 ```bash
-docker compose build
-docker compose run --rm sebrae-scraper
+docker-compose build
+docker-compose run --rm sebrae-scraper
 ```
 
 4. Visualize os logs:
 ```bash
-docker compose logs
+docker-compose logs
 ```
 
 ## Configuração
@@ -103,7 +103,7 @@ O scraper foi projetado para execução manual. Para execução periódica, use 
 crontab -e
 
 # Adicionar linha para executar a cada 6 horas
-0 */6 * * * cd /path/to/scraper-convocacao-sebrae && docker compose run --rm sebrae-scraper
+0 */6 * * * cd /path/to/scraper-convocacao-sebrae && docker-compose run --rm sebrae-scraper
 ```
 
 ### Opção 2: Execução Direta
@@ -143,10 +143,10 @@ pytest tests/ --cov=sebrae_scraper --cov-report=html
 
 ```bash
 # Build a imagem
-docker compose build
+docker-compose build
 
 # Execute os testes no container
-docker compose run --rm sebrae-scraper pytest tests/ -v
+docker-compose run --rm sebrae-scraper pytest tests/ -v
 ```
 
 ### Estrutura dos Testes
