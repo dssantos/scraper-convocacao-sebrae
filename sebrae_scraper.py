@@ -41,11 +41,41 @@ def setup_logging():
 
 logger = setup_logging()
 
+def ensure_data_directory():
+    """Garante que o diretório de dados e o arquivo existam."""
+    data_dir = os.path.dirname(CHECKED_URLS_FILE)
+
+    # Criar diretório se não existir
+    if data_dir and not os.path.exists(data_dir):
+        try:
+            os.makedirs(data_dir, exist_ok=True)
+            logger.debug(f"Created directory: {data_dir}")
+        except OSError as e:
+            logger.warning(f"Could not create directory {data_dir}: {e}")
+
+    # Criar arquivo vazio se não existir
+    if not os.path.exists(CHECKED_URLS_FILE):
+        try:
+            with open(CHECKED_URLS_FILE, "w", encoding="utf-8") as f:
+                json.dump({}, f)
+            logger.debug(f"Created file: {CHECKED_URLS_FILE}")
+        except OSError as e:
+            logger.warning(f"Could not create file {CHECKED_URLS_FILE}: {e}")
+
 def load_checked_data():
     """Carrega as URLs e nomes já verificados de um arquivo JSON."""
+    # Garantir que arquivo existe antes de tentar ler
+    ensure_data_directory()
+
     if os.path.exists(CHECKED_URLS_FILE):
-        with open(CHECKED_URLS_FILE, "r", encoding="utf-8") as file:
-            return json.load(file)
+        try:
+            with open(CHECKED_URLS_FILE, "r", encoding="utf-8") as file:
+                return json.load(file)
+        except json.JSONDecodeError:
+            logger.warning(f"Invalid JSON in {CHECKED_URLS_FILE}, creating new file")
+            with open(CHECKED_URLS_FILE, "w", encoding="utf-8") as file:
+                json.dump({}, file)
+            return {}
     return {}
 
 def save_checked_data(name, url):
