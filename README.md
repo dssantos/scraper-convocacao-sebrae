@@ -90,8 +90,8 @@ Crie um arquivo `.env` com as seguintes variáveis:
 ### Customização
 
 Edite `sebrae_scraper.py` para modificar:
-- `name` (linha 97): O nome a ser procurado
-- `url` (linha 98): A página do SEBRAE a ser monitorada
+- `name`: O nome a ser procurado
+- `url`: A página do SEBRAE a ser monitorada
 
 ## Agendamento
 
@@ -173,7 +173,9 @@ scraper-convocacao-sebrae/
 │   ├── test_utils.py       # Testes de utilitários
 │   ├── test_scraper.py     # Testes do scraper
 │   └── test_integration.py # Testes de integração
-├── checked_urls.json       # Estado persistente (gerado automaticamente)
+├── data/                   # Diretório de dados (bind mount)
+│   ├── checked_urls.json   # Estado persistente (auto-criado)
+│   └── scraper.log         # Logs de execução (auto-criado)
 └── README.md               # Este arquivo
 ```
 
@@ -183,6 +185,9 @@ scraper-convocacao-sebrae/
 - `lxml`: Processamento de XML e HTML
 - `pypdf`: Extração de texto de PDFs
 - `python-decouple`: Gerenciamento de variáveis de ambiente
+- `pytest`: Framework de testes
+- `pytest-mock`: Mocking para testes
+- `pytest-cov`: Coverage de testes
 
 ## Como Funciona
 
